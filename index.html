@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>NIKKE UR43 傷害分析與練度體檢儀</title>
+ <!-- Google Fonts Inter & JetBrains Mono -->
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+ <div class="container">
+  <!-- Header -->
+  <header class="app-header">
+   <div class="logo-group">
+    <div class="logo-badge">UR43</div>
+    <div class="logo-text">
+     <h1>NIKKE UNION RAID 傷害分析與練度體檢儀</h1>
+     <p>第 43 期公會戰 · 日服 (JP) 全等級實戰大數據庫 (Lv 310 ～ 1119 滿功率出刀分析)</p>
+    </div>
+   </div>
+   <div class="header-meta">
+    <div class="status-tag">
+     <span class="status-dot"></span>
+     <span>DATABASE ONLINE (LV 310 ~ 1119)</span>
+    </div>
+    <div class="preset-group">
+     <button class="btn-sm" id="btnClearInputs" title="清空所有輸入">清空輸入</button>
+    </div>
+   </div>
+  </header>
+
+  <!-- Global Synchro Level Controller -->
+  <div class="level-bar-card">
+   <div class="level-label">
+    <span>同步器等級</span>
+   </div>
+   <div class="level-slider-wrap">
+    <input type="range" id="globalLevelSlider" class="slider-custom" min="310" max="1119" step="1" value="755">
+   </div>
+   <div class="level-input-box">
+    <button class="btn-step" id="btnLevelMinus">-5</button>
+    <input type="number" id="globalLevelInput" class="input-num" min="310" max="1119" value="755">
+    <button class="btn-step" id="btnLevelPlus">+5</button>
+   </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+   <button class="tab-btn active" data-tab="multi">
+    <span>五屬性綜合體檢表</span>
+   </button>
+   <button class="tab-btn" data-tab="single">
+    <span>單刀深度診斷與分布</span>
+   </button>
+   <button class="tab-btn" data-tab="docs">
+    <span>規格與測資驗證</span>
+   </button>
+  </nav>
+
+  <!-- View 1: 5-Element Diagnostic -->
+  <section id="viewMulti">
+   <div class="diagnostic-grid">
+    <!-- Left: 5 Element Inputs -->
+    <div class="card">
+     <div class="card-header">
+      <h2 class="card-title">填寫各屬性單刀傷害</h2>
+      <span style="font-size: 11px; color: var(--text-muted);">支援 36B、360億、36000M</span>
+     </div>
+
+     <div class="element-input-list">
+      <!-- Electric -->
+      <div class="element-row-card">
+       <div class="elem-badge Electric">電擊 (Electric)</div>
+       <div class="dmg-input-wrap">
+        <input type="text" id="input_multi_Electric" class="input-dmg" placeholder="例如 44B">
+        <span class="input-unit-label">DMG</span>
+       </div>
+       <div class="dmg-preview-text" id="preview_multi_Electric">44.00 B</div>
+      </div>
+
+      <!-- Fire -->
+      <div class="element-row-card">
+       <div class="elem-badge Fire">燃燒 (Fire)</div>
+       <div class="dmg-input-wrap">
+        <input type="text" id="input_multi_Fire" class="input-dmg" placeholder="例如 29B">
+        <span class="input-unit-label">DMG</span>
+       </div>
+       <div class="dmg-preview-text" id="preview_multi_Fire">29.00 B</div>
+      </div>
+
+      <!-- Water -->
+      <div class="element-row-card">
+       <div class="elem-badge Water">水冷 (Water)</div>
+       <div class="dmg-input-wrap">
+        <input type="text" id="input_multi_Water" class="input-dmg" placeholder="例如 36B">
+        <span class="input-unit-label">DMG</span>
+       </div>
+       <div class="dmg-preview-text" id="preview_multi_Water">36.00 B</div>
+      </div>
+
+      <!-- Wind -->
+      <div class="element-row-card">
+       <div class="elem-badge Wind">風壓 (Wind)</div>
+       <div class="dmg-input-wrap">
+        <input type="text" id="input_multi_Wind" class="input-dmg" placeholder="例如 40B">
+        <span class="input-unit-label">DMG</span>
+       </div>
+       <div class="dmg-preview-text" id="preview_multi_Wind">40.00 B</div>
+      </div>
+
+      <!-- Iron -->
+      <div class="element-row-card">
+       <div class="elem-badge Iron">鐵甲 (Iron)</div>
+       <div class="dmg-input-wrap">
+        <input type="text" id="input_multi_Iron" class="input-dmg" placeholder="例如 52B">
+        <span class="input-unit-label">DMG</span>
+       </div>
+       <div class="dmg-preview-text" id="preview_multi_Iron">52.00 B</div>
+      </div>
+     </div>
+    </div>
+
+    <!-- Right: Radar Chart & Diagnostic Table -->
+    <div class="card">
+     <div class="card-header">
+      <h2 class="card-title">五屬性練度分析矩陣</h2>
+      <button class="btn-secondary" id="btnCopyReport">複製報告 (Markdown)</button>
+     </div>
+
+     <div class="radar-container">
+      <canvas id="radarCanvas"></canvas>
+     </div>
+
+     <table class="results-table">
+      <thead>
+       <tr>
+        <th>屬性</th>
+        <th>你的傷害</th>
+        <th>同級中位</th>
+        <th>百分位</th>
+        <th>等效等級</th>
+        <th>領先差距</th>
+       </tr>
+      </thead>
+      <tbody id="multiResultsBody">
+       <!-- Generated via JS -->
+      </tbody>
+     </table>
+
+     <div class="verdict-banner">
+      <div class="verdict-text" id="multiVerdictText">
+       <!-- Generated via JS -->
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <!-- View 2: Single Element Deep Dive -->
+  <section id="viewSingle" style="display: none;">
+   <div class="single-grid">
+    <!-- Controls -->
+    <div class="card">
+     <div class="card-header">
+      <h2 class="card-title">單刀診斷設定</h2>
+     </div>
+
+     <div class="form-group">
+      <label class="form-label">選擇屬性</label>
+      <div class="elem-select-grid">
+       <button class="elem-btn Water active" data-elem="Water">
+        <span>Water</span>
+       </button>
+       <button class="elem-btn Fire" data-elem="Fire">
+        <span>Fire</span>
+       </button>
+       <button class="elem-btn Wind" data-elem="Wind">
+        <span>Wind</span>
+       </button>
+       <button class="elem-btn Electric" data-elem="Electric">
+        <span>Electric</span>
+       </button>
+       <button class="elem-btn Iron" data-elem="Iron">
+        <span>Iron</span>
+       </button>
+      </div>
+     </div>
+
+     <div class="form-group">
+      <label class="form-label" for="singleHitIndex">出刀順序 (Hit Order)</label>
+      <select id="singleHitIndex" class="select-custom">
+       <option value="all" selected>不分刀序（全體混合基準）</option>
+       <option value="1">第 1 刀（主力隊伍出戰）</option>
+       <option value="2">第 2 刀（次主力隊伍出戰）</option>
+       <option value="3">第 3 刀（雜牌收尾刀，普遍偏低約10%）</option>
+      </select>
+     </div>
+
+     <div class="form-group">
+      <label class="form-label" for="singleDamageInput">單刀傷害</label>
+      <div class="dmg-input-wrap">
+       <input type="text" id="singleDamageInput" class="input-dmg" placeholder="例如 36B 或 36,000,000,000" value="36B">
+       <span class="input-unit-label">DMG</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--text-secondary);">
+       <span>即時解析：</span>
+       <span id="singleDmgPreview" style="font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 700;">36.00 B</span>
+      </div>
+     </div>
+
+     <div class="form-group">
+      <label class="checkbox-toggle">
+       <input type="checkbox" id="singleIsKill">
+       <span style="font-size: 13px; font-weight: 600; color: #ff8a80;">這刀有打死王嗎？（擊殺刀）</span>
+      </label>
+     </div>
+    </div>
+
+    <!-- Single Deep Dive Stats & Distribution Chart -->
+    <div class="card">
+     <div id="killWarningBox" class="warning-box" style="display: none;">
+      <strong>擊殺刀提醒：</strong><br>
+      擊殺該階段的最後一刀傷害受王剩餘血量限制，並非 3 分鐘滿功率輸出，無法與常規輸出基準公平比較。請輸入未擊殺的完整輸出刀。
+     </div>
+
+     <div id="heroStatsContainer">
+      <!-- Hero Metrics 3 Cards -->
+      <div class="hero-metrics-grid">
+       <div class="hero-metric-card cyan">
+        <div class="metric-title">百分位 (Percentile)</div>
+        <div class="metric-value-lg" id="valPercentile">80.0%</div>
+        <div class="metric-subtext" id="subtextPercentile">同級 439 人中贏過 351 人</div>
+       </div>
+
+       <div class="hero-metric-card emerald">
+        <div class="metric-title">等效等級 (Equivalent Lv)</div>
+        <div class="metric-value-lg" id="valEqLevel">Lv 792</div>
+        <div class="metric-subtext" id="subtextEqLevel">等級差距：+37 級</div>
+       </div>
+
+       <div class="hero-metric-card amber">
+        <div class="metric-title">同級中位數 (p50)</div>
+        <div class="metric-value-lg" id="valMedian">30.41 B</div>
+        <div class="metric-subtext">滿功率中位基準</div>
+       </div>
+      </div>
+
+      <!-- Benchmark Info Tag -->
+      <div id="badgeSampleInfo" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; font-family: var(--font-mono);">
+       基準窗口: Lv 745 ~ 765 (±10) ｜ 樣本數 n = 439 ｜ 可信度: <strong>高</strong>
+      </div>
+
+      <!-- Distribution Chart -->
+      <div class="card-header" style="margin-bottom: 8px;">
+       <h3 style="font-size: 14px; color: #fff;">同等級傷害分布曲線 (Distribution Curve)</h3>
+      </div>
+      <div class="distribution-wrap">
+       <canvas id="distCanvas"></canvas>
+      </div>
+
+      <!-- Quantile Breakdown Pills -->
+      <div class="quantiles-grid">
+       <div class="q-pill">
+        <div class="q-pill-label">p10 (前 90%)</div>
+        <div class="q-pill-val" id="pill_p10">-</div>
+       </div>
+       <div class="q-pill">
+        <div class="q-pill-label">p25 (前 75%)</div>
+        <div class="q-pill-val" id="pill_p25">-</div>
+       </div>
+       <div class="q-pill">
+        <div class="q-pill-label">p50 (中位數)</div>
+        <div class="q-pill-val" id="pill_p50" style="color: var(--accent-amber);">-</div>
+       </div>
+       <div class="q-pill">
+        <div class="q-pill-label">p75 (前 25%)</div>
+        <div class="q-pill-val" id="pill_p75">-</div>
+       </div>
+       <div class="q-pill">
+        <div class="q-pill-label">p90 (前 10%)</div>
+        <div class="q-pill-val" id="pill_p90" style="color: var(--accent-cyan);">-</div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section>
+
+  <!-- View 3: Specifications & Verification Suite -->
+  <section id="viewDocs" style="display: none;">
+   <div class="card">
+    <div class="card-header">
+     <h2 class="card-title">實作規格與自動化驗證矩陣</h2>
+    </div>
+
+    <div class="doc-section">
+     <h3>1. 測試案例驗證 (Section 5 Verification Suite)</h3>
+     <p>以下為規格書所規定的 3 組標準測資，點擊按鈕即可立即將數值載入單刀診斷進行零秒驗證：</p>
+     <table class="test-suite-table">
+      <thead>
+       <tr>
+        <th>#</th>
+        <th>測試輸入</th>
+        <th>預期樣本數 n (窗口)</th>
+        <th>預期 p50 中位數</th>
+        <th>預期百分位</th>
+        <th>預期等效等級</th>
+        <th>操作</th>
+       </tr>
+      </thead>
+      <tbody>
+       <tr>
+        <td>1</td>
+        <td><code>Water</code>, Lv 755, 36,000,000,000 (36B), 不分刀序</td>
+        <td>439 (±10)</td>
+        <td>30,414,087,350</td>
+        <td><strong style="color: var(--accent-cyan);">80.0%</strong></td>
+        <td><strong style="color: var(--accent-emerald);">Lv 792</strong> (+37級)</td>
+        <td><button class="btn-sm btn-run-verify" data-test="1">帶入驗證</button></td>
+       </tr>
+       <tr>
+        <td>2</td>
+        <td><code>Iron</code>, Lv 755, 52,000,000,000 (52B), 不分刀序</td>
+        <td>592 (±10)</td>
+        <td>42,803,610,256</td>
+        <td><strong style="color: var(--accent-cyan);">81.8%</strong></td>
+        <td><strong style="color: var(--accent-emerald);">Lv 794</strong> (+39級)</td>
+        <td><button class="btn-sm btn-run-verify" data-test="2">帶入驗證</button></td>
+       </tr>
+       <tr>
+        <td>3</td>
+        <td><code>Iron</code>, Lv 755, 52,000,000,000 (52B), <strong>第 3 刀</strong></td>
+        <td>327 (±10)</td>
+        <td>41,757,316,382</td>
+        <td><strong style="color: var(--accent-cyan);">82.3%</strong></td>
+        <td><strong style="color: var(--accent-emerald);">Lv 800</strong> (+45級)</td>
+        <td><button class="btn-sm btn-run-verify" data-test="3">帶入驗證</button></td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+
+    <div class="doc-section">
+     <h3>2. 核心算法與遊戲背景規則</h3>
+     <ul>
+      <li><strong>Step 5 與 Step 6 合併</strong>：Step 6 (Material H 無限血版) 與 Step 5 為同一隻王，皆歸入 <code>Iron</code> 屬性池。</li>
+      <li><strong>擊殺刀排除 (is_kill = 1)</strong>：擊殺刀受殘血封頂，不是滿功率輸出，已在基準庫中嚴格剔除（排除 2,109 刀，留存 11,964 滿功率有效刀）。</li>
+      <li><strong>滑動窗口算法</strong>：以玩家等級為中心，依序嘗試 ±10, ±20, ±30, ±40, ±60, ±100 窗口，直到樣本數 $n \ge 30$。</li>
+      <li><strong>單調性修正中位曲線</strong>：為避免中位數雜訊下凹，等效等級反查採用已套用 <code>cummax</code> 單調化處理的中位曲線 <code>median_curve</code> 進行線性內插。</li>
+     </ul>
+    </div>
+   </div>
+  </section>
+
+ </div>
+
+ <!-- Load Embedded Dataset & App Logic -->
+ <script src="data.js"></script>
+ <script src="app.js"></script>
+</body>
+</html>
