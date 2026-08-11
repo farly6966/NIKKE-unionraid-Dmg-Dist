@@ -125,21 +125,25 @@
     return null;
   }
 
-  // Helper: Format damage to readable string
-  function formatDmg(val, compact = true) {
+  // Helper: Format damage to readable string (with optional decoupled unit HTML)
+  function formatDmg(val, compact = true, htmlWrap = false) {
     if (val === null || val === undefined || isNaN(val)) return '-';
     if (compact) {
       if (val >= 1e9) {
-        return (val / 1e9).toFixed(2).replace(/\.00$/, '') + ' B';
+        const numStr = (val / 1e9).toFixed(2).replace(/\.00$/, '');
+        return htmlWrap ? `<span class="tnum">${numStr}</span><span class="num-unit">B</span>` : `${numStr} B`;
       }
       if (val >= 1e6) {
-        return (val / 1e6).toFixed(1) + ' M';
+        const numStr = (val / 1e6).toFixed(1);
+        return htmlWrap ? `<span class="tnum">${numStr}</span><span class="num-unit">M</span>` : `${numStr} M`;
       }
       if (val >= 1e4) {
-        return (val / 1e4).toFixed(1) + ' 萬';
+        const numStr = (val / 1e4).toFixed(1);
+        return htmlWrap ? `<span class="tnum">${numStr}</span><span class="num-unit">萬</span>` : `${numStr} 萬`;
       }
     }
-    return Number(val).toLocaleString();
+    const loc = Number(val).toLocaleString();
+    return htmlWrap ? `<span class="tnum">${loc}</span>` : loc;
   }
 
   // Core Math Engine: Build Sliding Window Sample Pool
@@ -526,27 +530,26 @@
 
     // Render Table Rows
     tableBody.innerHTML = results.map(r => {
-      const icon = ELEM_CONFIG[r.elem].icon;
       const zh = ELEM_CONFIG[r.elem].nameZh;
-      const dmgStr = r.damage > 0 ? formatDmg(r.damage, true) : '<span style="color: var(--text-muted)">-</span>';
-      const p50Str = formatDmg(r.p50, true);
+      const dmgStr = r.damage > 0 ? formatDmg(r.damage, true, true) : '<span style="color: var(--text-muted)">-</span>';
+      const p50Str = formatDmg(r.p50, true, true);
       const pctStr = r.damage > 0 ? `${r.pct.toFixed(1)}%` : '-';
       const eqStr = r.damage > 0 ? formatEqLevel(r.eqLv) : '-';
 
       return `
         <tr>
-          <td><span class="elem-badge ${r.elem}">${zh}</span></td>
-          <td><strong>${dmgStr}</strong></td>
-          <td style="color: var(--text-secondary);">${p50Str}</td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-weight: 700; font-family: var(--font-mono);">${pctStr}</span>
+          <td class="align-left"><span class="elem-badge ${r.elem}">${zh}</span></td>
+          <td class="align-right"><strong>${dmgStr}</strong></td>
+          <td class="align-right">${p50Str}</td>
+          <td class="align-center">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span style="font-weight: 600;" class="tnum">${pctStr}</span>
               <span class="rank-badge ${r.rank.cls}">${r.rank.label}</span>
             </div>
-            ${r.damage > 0 ? `<div class="mini-bar-bg"><div class="mini-bar-fill" style="width: ${r.pct}%;"></div></div>` : ''}
+            ${r.damage > 0 ? `<div class="mini-bar-bg" style="max-width: 100px; margin: 4px auto 0 auto;"><div class="mini-bar-fill" style="width: ${r.pct}%;"></div></div>` : ''}
           </td>
-          <td><strong style="font-family: var(--font-mono);">${eqStr}</strong></td>
-          <td><span class="${r.deltaCls}">${r.deltaStr}</span></td>
+          <td class="align-right"><strong class="tnum">${eqStr}</strong></td>
+          <td class="align-center"><span class="${r.deltaCls}">${r.deltaStr}</span></td>
         </tr>
       `;
     }).join('');
@@ -590,8 +593,36 @@
       }
     }
 
-    // Draw Radar Chart
-    drawRadarChart(radarUserVals);
+    // Animate Radar Chart smoothly
+    animateRadarChart(radarUserVals);
+  }
+
+  // Smooth animation controller for Radar Chart
+  let radarAnimId = null;
+  let radarCurrentRatios = [1.0, 1.0, 1.0, 1.0, 1.0];
+  let radarTargetRatios = [1.0, 1.0, 1.0, 1.0, 1.0];
+
+  function animateRadarChart(targetRatios) {
+    radarTargetRatios = targetRatios;
+    if (radarAnimId) cancelAnimationFrame(radarAnimId);
+
+    function step() {
+      let diff = 0;
+      for (let i = 0; i < 5; i++) {
+        const d = radarTargetRatios[i] - radarCurrentRatios[i];
+        radarCurrentRatios[i] += d * 0.25;
+        diff += Math.abs(d);
+      }
+      drawRadarChart(radarCurrentRatios);
+      if (diff > 0.005) {
+        radarAnimId = requestAnimationFrame(step);
+      } else {
+        radarCurrentRatios = [...radarTargetRatios];
+        drawRadarChart(radarCurrentRatios);
+        radarAnimId = null;
+      }
+    }
+    radarAnimId = requestAnimationFrame(step);
   }
 
   // Draw High-DPI Canvas Radar Chart
@@ -780,7 +811,7 @@
         : '-';
     }
 
-    if (valMedian) valMedian.textContent = formatDmg(p50, true);
+    if (valMedian) valMedian.innerHTML = formatDmg(p50, true, true);
     if (badgeSampleInfo) {
       const minLv = state.syncLv - poolObj.width;
       const maxLv = state.syncLv + poolObj.width;
@@ -789,12 +820,12 @@
       `;
     }
 
-    // Update Quantile Pills
-    document.getElementById('pill_p10').textContent = formatDmg(p10, true);
-    document.getElementById('pill_p25').textContent = formatDmg(p25, true);
-    document.getElementById('pill_p50').textContent = formatDmg(p50, true);
-    document.getElementById('pill_p75').textContent = formatDmg(p75, true);
-    document.getElementById('pill_p90').textContent = formatDmg(p90, true);
+    // Update Quantile Pills with decoupled unit typography
+    document.getElementById('pill_p10').innerHTML = formatDmg(p10, true, true);
+    document.getElementById('pill_p25').innerHTML = formatDmg(p25, true, true);
+    document.getElementById('pill_p50').innerHTML = formatDmg(p50, true, true);
+    document.getElementById('pill_p75').innerHTML = formatDmg(p75, true, true);
+    document.getElementById('pill_p90').innerHTML = formatDmg(p90, true, true);
 
     // Draw Distribution Curve
     drawDistributionCurve(pool, dmg, p10, p25, p50, p75, p90);

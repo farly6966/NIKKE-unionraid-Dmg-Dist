@@ -17,20 +17,20 @@
   --accent-blue: #0071e3;
   --accent-blue-hover: #0077ed;
   --accent-blue-light: #e8f2fc;
-  --accent-green: #34c759;
+  --accent-green: #248a3d;
   --accent-green-light: #edf8ee;
-  --accent-red: #ff3b30;
+  --accent-red: #c9342c;
   --accent-red-light: #fef2f2;
-  --accent-amber: #ff9500;
+  --accent-amber: #b45309;
   --accent-amber-light: #fff8eb;
   
-  --color-electric: #b38800;
+  --color-electric: #8c6b00;
   --color-electric-bg: #fef9e7;
-  --color-fire: #d32f2f;
+  --color-fire: #c9342c;
   --color-fire-bg: #fdeeed;
   --color-water: #0071e3;
   --color-water-bg: #edf5fd;
-  --color-wind: #2e7d32;
+  --color-wind: #248a3d;
   --color-wind-bg: #edf7ed;
   --color-iron: #455a64;
   --color-iron-bg: #f0f2f5;
@@ -65,7 +65,27 @@ body {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 36px 24px 80px 24px;
+  padding: 40px 24px 80px 24px;
+}
+
+/* Tabular numbers for all analytical figures */
+.tnum,
+.input-num,
+.input-dmg,
+.dmg-preview-text,
+.results-table td,
+.metric-value-lg,
+.q-pill-val {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1;
+}
+
+/* Number with decoupled unit typography */
+.num-unit {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 2px;
 }
 
 /* Header */
@@ -123,7 +143,7 @@ body {
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   font-size: 12px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: var(--radius-pill);
   font-weight: 500;
 }
@@ -178,7 +198,7 @@ body {
   padding: 7px 18px;
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
@@ -189,7 +209,7 @@ body {
 .tab-btn.active {
   color: var(--text-primary);
   background: #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.02);
   font-weight: 600;
 }
 
@@ -226,7 +246,7 @@ body {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 16px 22px;
+  padding: 16px 24px;
   margin-bottom: 24px;
   box-shadow: var(--shadow-card);
 }
@@ -263,12 +283,12 @@ body {
   background: #ffffff;
   cursor: pointer;
   border: 0.5px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   transition: transform 0.1s ease;
 }
 
 .slider-custom::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
+  transform: scale(1.12);
 }
 
 .level-input-box {
@@ -286,10 +306,10 @@ body {
   font-family: var(--font-mono);
   padding: 6px 10px;
   border-radius: var(--radius-sm);
-  width: 80px;
+  width: 84px;
   text-align: center;
   outline: none;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .input-num:focus {
@@ -342,6 +362,11 @@ body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 10px 14px;
+  transition: border-color 0.15s ease;
+}
+
+.element-row-card:focus-within {
+  border-color: #c7c7cc;
 }
 
 .elem-badge {
@@ -350,6 +375,7 @@ body {
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   width: 130px;
+  letter-spacing: -0.1px;
 }
 
 .elem-badge.Electric { color: var(--color-electric); background: var(--color-electric-bg); }
@@ -373,10 +399,10 @@ body {
   font-size: 14px;
   font-weight: 600;
   font-family: var(--font-mono);
-  padding: 7px 34px 7px 10px;
+  padding: 8px 34px 8px 12px;
   border-radius: var(--radius-sm);
   outline: none;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .input-dmg:focus {
@@ -395,7 +421,7 @@ body {
 }
 
 .dmg-preview-text {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
   font-family: var(--font-mono);
@@ -408,7 +434,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 8px 0;
+  padding: 8px 0 16px 0;
 }
 
 #radarCanvas {
@@ -425,7 +451,6 @@ body {
 }
 
 .results-table th {
-  text-align: left;
   padding: 10px 12px;
   color: var(--text-secondary);
   font-size: 12px;
@@ -433,33 +458,43 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 
+.results-table th.align-left   { text-align: left; }
+.results-table th.align-right  { text-align: right; }
+.results-table th.align-center { text-align: center; }
+
 .results-table td {
-  padding: 11px 12px;
+  padding: 12px 12px;
   border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
 }
 
+.results-table td.align-left   { text-align: left; }
+.results-table td.align-right  { text-align: right; }
+.results-table td.align-center { text-align: center; }
+
 .results-table tr:hover td {
-  background: #f9f9fb;
+  background: #fbfbfd;
 }
 
 .rank-badge {
   display: inline-block;
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-family: var(--font-mono);
+  letter-spacing: -0.2px;
 }
 
-.rank-s-plus { background: #fef9e7; color: #b38800; }
-.rank-s { background: #edf5fd; color: #0071e3; }
-.rank-a { background: #edf8ee; color: #2e7d32; }
-.rank-b { background: #fff8eb; color: #f57c00; }
-.rank-c { background: #fdeeed; color: #d32f2f; }
+.rank-s-plus { background: #fef9e7; color: var(--accent-amber); }
+.rank-s      { background: #edf5fd; color: var(--accent-blue); }
+.rank-a      { background: #edf8ee; color: var(--accent-green); }
+.rank-b      { background: #fff8eb; color: #f57c00; }
+.rank-c      { background: #fdeeed; color: var(--accent-red); }
 
-.delta-positive { color: #2e7d32; font-weight: 600; font-family: var(--font-mono); }
-.delta-negative { color: #d32f2f; font-weight: 600; font-family: var(--font-mono); }
-.delta-zero { color: var(--text-secondary); font-family: var(--font-mono); }
+.delta-positive { color: var(--accent-green); font-weight: 600; font-family: var(--font-mono); }
+.delta-negative { color: var(--accent-red); font-weight: 600; font-family: var(--font-mono); }
+.delta-zero     { color: var(--text-secondary); font-family: var(--font-mono); }
 
 .mini-bar-bg {
   width: 100%;
@@ -474,7 +509,7 @@ body {
   height: 100%;
   border-radius: 2px;
   background: var(--accent-blue);
-  transition: width 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Verdict Summary Banner */
