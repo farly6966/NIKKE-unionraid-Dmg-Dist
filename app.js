@@ -1295,7 +1295,12 @@
     }
 
     const dbTag = document.getElementById('dbRangeTag');
-    if (dbTag) dbTag.textContent = `${state.period || ''} ｜ 樣本充足 LV ${BAND_LO}~${BAND_HI}｜可查 ${DATA_LO}~${DATA_HI}`;
+    if (dbTag) {
+      const b = window.UR_BUILD;
+      dbTag.textContent = `${state.period || ''} ｜ 樣本充足 LV ${BAND_LO}~${BAND_HI}`
+        + ` ｜ 可查 ${DATA_LO}~${DATA_HI}`
+        + (b ? ` ｜ 資料 ${b.generated_at}` : ' ｜ 資料版本未知（可能是舊快取，請 Ctrl+Shift+R）');
+    }
 
     if (state.activeTab === 'multi') {
       renderMultiDiagnostic();
