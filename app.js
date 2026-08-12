@@ -1787,10 +1787,39 @@
     }
   }
 
+  /**
+   * 資料包沒載入時，大聲擋下來。
+   *
+   * 不擋的話會發生：BAND_LO/BAND_HI 停在程式裡的佔位值 661/1000、期數選單空白、
+   * 所有查詢都查不到 —— 畫面看起來「像是載到舊版」，但真正的原因是
+   * data_multi.js 根本沒讀到（檔名不符、沒上傳、路徑錯、被 CDN 擋掉）。
+   * 這種誤導性的失敗最難查，所以寧可整頁停下來講清楚。
+   */
+  function dataPackMissing() {
+    const el = document.querySelector('.app-container') || document.body;
+    el.innerHTML = `
+      <div style="max-width:680px;margin:60px auto;padding:24px;border-radius:12px;
+                  border:1px solid #f7c9c6;background:#fef2f2;color:#1d1d1f;
+                  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;">
+        <h2 style="font-size:18px;margin:0 0 12px;color:#c9342c;">資料包沒有載入</h2>
+        <p style="margin:0 0 12px;">網頁程式有跑起來，但 <code>data_multi.js</code> 沒讀到，
+           所以沒有任何期數可以查詢。常見原因：</p>
+        <ol style="margin:0 0 12px;padding-left:20px;">
+          <li><code>data_multi.js</code> 沒有跟 <code>index.html</code> 放在同一個資料夾</li>
+          <li>檔案沒有上傳成功（GitHub 上傳大檔案時偶爾會漏）</li>
+          <li>GitHub Pages 還在部署，或 CDN 仍在送舊版（最多 10 分鐘）</li>
+          <li>檔名不符 —— <code>index.html</code> 找的是 <code>data_multi.js</code></li>
+        </ol>
+        <p style="margin:0;">按 <strong>Ctrl + Shift + R</strong> 硬性重新整理。
+           若仍是這個畫面，請確認上面四點。</p>
+      </div>`;
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // 先決定期數，再做任何依賴資料的初始化
     const list = periodList();
-    if (list.length) usePeriod(state.period && window.UR_DATA[state.period] ? state.period : list[0]);
+    if (!list.length || !window.UR_DATA) { dataPackMissing(); return; }
+    usePeriod(state.period && window.UR_DATA[state.period] ? state.period : list[0]);
 
     const sl = document.getElementById('globalLevelSlider');
     const si = document.getElementById('globalLevelInput');
