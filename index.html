@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NIKKE UR43 傷害分析與練度體檢儀 (v3 戰力段架構)</title>
+  <title>NIKKE Union Raid 傷害分析與練度體檢儀</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,13 +17,17 @@
    <div class="header-brand">
     <div class="logo-text">
      <h1>NIKKE UNION RAID 傷害分析與練度體檢儀</h1>
-     <p>第 43 期公會戰 · 日服 (JP) 實戰全樣本庫 (v3 戰力段制 · Lv 661 ～ 1000)</p>
+     <p>日服 (JP) 實戰全樣本庫 · v3 戰力段制</p>
     </div>
    </div>
    <div class="header-meta">
+    <div class="period-picker">
+     <label class="period-label" for="periodSelect">公會戰期數</label>
+     <select id="periodSelect" class="input-control period-select"></select>
+    </div>
     <div class="status-tag">
      <span class="status-dot"></span>
-     <span>DATABASE ONLINE (LV 661 ~ 1000)</span>
+     <span id="dbRangeTag">DATABASE ONLINE</span>
     </div>
     <div class="preset-group">
      <button class="btn-sm" id="btnClearInputs" title="清空所有輸入">清空輸入</button>
@@ -54,6 +58,9 @@
    </button>
    <button class="tab-btn" data-tab="single">
     <span>單刀深度診斷與隊伍維度</span>
+   </button>
+   <button class="tab-btn" data-tab="growth">
+    <span>跨期成長追蹤</span>
    </button>
    <button class="tab-btn" data-tab="docs">
     <span>規格與測資驗證</span>
@@ -367,6 +374,71 @@
   </section>
 
   <!-- View 3: Specifications & Verification Suite -->
+  <!-- View 3: 跨期成長追蹤 -->
+  <section id="viewGrowth" class="tab-view" style="display: none;">
+   <div class="card">
+    <div class="card-header">
+     <h2 class="card-title">跨期成長追蹤</h2>
+     <div class="badge-info" id="growthScopeTag">-</div>
+    </div>
+
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;">
+     輸入你的玩家 ID，自動比對兩期的實戰紀錄。傷害不能跨期直接比（每期王不同），
+     所以這裡比的是<strong>同戰力段內的百分位</strong> —— 名次會自動抵消王的難度差異。
+    </p>
+
+    <div class="form-group" style="max-width:420px;">
+     <label class="form-label" for="growthPlayerId">玩家 ID</label>
+     <div class="input-unit-wrap">
+      <input type="text" id="growthPlayerId" class="input-control" placeholder="例如 71591648" inputmode="numeric">
+      <button class="btn-primary" id="btnGrowthLookup" style="flex:0 0 auto;">查詢</button>
+     </div>
+     <div class="dmg-note" id="growthNote" style="display:none;"></div>
+    </div>
+
+    <div id="growthResult" style="display:none;">
+     <div class="stat-cards-grid" style="margin-top:8px;">
+      <div class="stat-card">
+       <div class="stat-card-title">同段百分位變化</div>
+       <div class="stat-card-val" id="growthPctDelta">-</div>
+       <div class="stat-card-sub" id="growthPctSub">-</div>
+      </div>
+      <div class="stat-card">
+       <div class="stat-card-title">同步器等級成長</div>
+       <div class="stat-card-val" id="growthLvGain">-</div>
+       <div class="stat-card-sub" id="growthLvSub">-</div>
+      </div>
+      <div class="stat-card">
+       <div class="stat-card-title">在所有玩家中的成長排名</div>
+       <div class="stat-card-val" id="growthRank">-</div>
+       <div class="stat-card-sub" id="growthRankSub">-</div>
+      </div>
+     </div>
+
+     <div class="alert-banner warning" style="margin-top:16px;">
+      <h4>這是相對指標</h4>
+      <p>全體的百分位變化中位數必然接近 0。往上代表你的練度成長<strong>快過同儕</strong>，
+       不是「你變強了多少」—— 兩期都在進步時，名次仍可能持平。</p>
+     </div>
+
+     <div class="table-responsive" style="margin-top:16px;">
+      <table class="report-table">
+       <thead>
+        <tr>
+         <th class="align-left">期數</th>
+         <th class="align-right">同步器等級</th>
+         <th class="align-right">戰力段</th>
+         <th class="align-right">平均百分位</th>
+         <th class="align-left">各刀明細</th>
+        </tr>
+       </thead>
+       <tbody id="growthDetailBody"></tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+  </section>
+
   <section id="viewDocs" style="display: none;">
    <div class="card">
     <div class="card-header">
@@ -410,7 +482,7 @@
  </div>
 
  <!-- App Scripts -->
- <script src="data.js"></script>
+ <script src="data_multi.js"></script>
  <script src="app.js"></script>
 </body>
 </html>

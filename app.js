@@ -16,17 +16,69 @@
     'Iron':     { nameZh: '鐵甲 (Iron)',     color: '#455a64', id: 4 }
   };
 
-  const BAND_LO = 661;
-  const BAND_HI = 1000;
-  const BANDS = [];
-  for (let b = BAND_LO; b <= BAND_HI; b += 20) {
-    BANDS.push(b);
+  // ──────────────────────────────────────────────────────────────
+  //  多期資料層
+  //
+  //  data.js 由 ur_bundle.py 產生，每一期的形狀完全相同。切換期數時
+  //  只是把 window.BENCHMARK_V3 等指標指到另一期，下游查表邏輯不必改動。
+  //  等級範圍、屬性清單、傷害合理區間都跟著該期的 consts 走 —— 玩家等級
+  //  逐期上升，寫死會在下一期失準。
+  // ──────────────────────────────────────────────────────────────
+  let BAND_LO = 661, BAND_HI = 1000, BANDS = [];
+  let PLAUSIBLE_MIN = 1e9, PLAUSIBLE_MAX = 5e11, OBSERVED_MAX_B = 221;
+
+  function rebuildBands() {
+    BANDS = [];
+    for (let b = BAND_LO; b <= BAND_HI; b += 20) BANDS.push(b);
   }
+
+  function periodList() {
+    return (window.UR_PERIODS && window.UR_PERIODS.length) ? window.UR_PERIODS : [];
+  }
+
+  /** 把全域資料指標切到指定期數。回傳是否成功。 */
+  function usePeriod(ur) {
+    const D = window.UR_DATA && window.UR_DATA[ur];
+    if (!D) return false;
+    window.BENCHMARK_V3 = D.BENCHMARK;
+    window.TEAM_BENCHMARK_V3 = D.TEAM_BENCHMARK;
+    window.TEAM_INDEX_V3 = D.TEAM_INDEX;
+    window.RAW_HITS = D.RAW_HITS;
+    // ⚠ RAW_HITS 的 h[0] 是資料包自己的屬性編號，與本檔的 ELEM_CONFIG.id
+    //   不一定一致（資料包用字母序）。不同步會讓每一次查詢都比對到錯的屬性，
+    //   而且不會報錯 —— 必須在這裡對齊。
+    if (D.elem_ids) {
+      Object.keys(ELEM_CONFIG).forEach(e => {
+        if (D.elem_ids[e] !== undefined) ELEM_CONFIG[e].id = D.elem_ids[e];
+      });
+    }
+    const c = D.consts || {};
+    if (c.BAND_LO) BAND_LO = c.BAND_LO;
+    if (c.BAND_HI) BAND_HI = c.BAND_HI;
+    if (c.PLAUSIBLE_MIN) PLAUSIBLE_MIN = c.PLAUSIBLE_MIN;
+    if (c.PLAUSIBLE_MAX) PLAUSIBLE_MAX = c.PLAUSIBLE_MAX;
+    if (c.OBSERVED_MAX_B) OBSERVED_MAX_B = c.OBSERVED_MAX_B;
+    rebuildBands();
+    state.period = ur;
+    // 等級可能落在新期範圍外，夾回來
+    state.syncLv = Math.max(BAND_LO, Math.min(BAND_HI, state.syncLv));
+    return true;
+  }
+
+  /** 隊伍字串 → RAW_HITS 裡使用的索引。找不到回傳 -1（必定比不中）。 */
+  function teamId(key) {
+    const m = window.UR_TEAM_ID;
+    return (m && m[key] !== undefined) ? m[key] : -1;
+  }
+
+  rebuildBands();
 
   // App State
   const state = {
     syncLv: 755,
     activeTab: 'multi',
+    period: null,
+    growthId: '',
     multiDamages: {
       'Electric': '',
       'Fire': '',
@@ -196,7 +248,8 @@
       const b = band_of(h[2]);
       if (b < lo || b > hi) return false;
       if (hf !== null && h[1] !== hf) return false;
-      if (teamKey !== null && h[4] !== teamKey) return false;
+      // h[4] 是隊伍索引（見 ur_bundle.py），不是字串
+      if (teamKey !== null && h[4] !== teamId(teamKey)) return false;
       return true;
     });
 
@@ -701,7 +754,8 @@
     const elemId = ELEM_CONFIG[elem].id;
     let matchCount = 0;
     if (selectedUnits.length === 5) {
-      matchCount = (window.RAW_HITS || []).filter(h => h[0] === elemId && h[4] === normKey).length;
+      const ti = teamId(normKey);
+      matchCount = (window.RAW_HITS || []).filter(h => h[0] === elemId && h[4] === ti).length;
     }
 
     const liveNEl = document.getElementById('customRosterN');
@@ -1171,15 +1225,134 @@
         bandTag.textContent = `${curBand}–${curBand + 19} 段`;
         bandTag.style.color = 'var(--accent-blue)';
       } else {
-        bandTag.textContent = '超出範圍 (661–1000)';
+        bandTag.textContent = `超出範圍 (${BAND_LO}–${BAND_HI})`;
         bandTag.style.color = 'var(--accent-red)';
       }
     }
+
+    const dbTag = document.getElementById('dbRangeTag');
+    if (dbTag) dbTag.textContent = `${state.period || ''} ｜ LV ${BAND_LO} ~ ${BAND_HI}`;
 
     if (state.activeTab === 'multi') {
       renderMultiDiagnostic();
     } else if (state.activeTab === 'single') {
       renderSingleDiagnostic();
+    } else if (state.activeTab === 'growth') {
+      renderGrowth();
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  //  跨期成長追蹤
+  // ──────────────────────────────────────────────────────────────
+
+  function crossKeyFor(cur) {
+    const list = periodList();
+    const i = list.indexOf(cur);
+    if (i < 0 || i + 1 >= list.length) return null;
+    return `${list[i + 1]}->${cur}`;
+  }
+
+  function setGrowthNote(msg, level) {
+    const el = document.getElementById('growthNote');
+    if (!el) return;
+    if (!msg) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = msg;
+    el.style.cssText += ';margin-top:8px;font-size:12px;line-height:1.5;padding:8px 10px;'
+      + 'border-radius:6px;display:block;'
+      + (level === 'error'
+        ? 'color:#c9342c;background:#fef2f2;border:1px solid #f7c9c6;'
+        : 'color:#b45309;background:#fff8eb;border:1px solid #fde68a;');
+  }
+
+  function renderGrowth() {
+    const ck = crossKeyFor(state.period);
+    const tag = document.getElementById('growthScopeTag');
+    const res = document.getElementById('growthResult');
+
+    if (!ck || !window.UR_CROSS || !window.UR_CROSS[ck]) {
+      if (tag) tag.textContent = '沒有更早的期數可比對';
+      if (res) res.style.display = 'none';
+      setGrowthNote(`目前選的是 ${state.period}，資料包裡沒有它的前一期，無法做跨期比較。`
+        + '請在期數選單改選較新的一期。', 'error');
+      return;
+    }
+    const C = window.UR_CROSS[ck];
+    if (tag) tag.textContent = `${C.prev} → ${C.cur} ｜ ${C.n} 人可比對`;
+
+    const uid = (state.growthId || '').trim();
+    if (!uid) { if (res) res.style.display = 'none'; setGrowthNote('', null); return; }
+
+    const A = (window.UR_PLAYERS || {})[C.prev] || {};
+    const B = (window.UR_PLAYERS || {})[C.cur] || {};
+    const a = A[uid], b = B[uid];
+
+    if (!a && !b) {
+      if (res) res.style.display = 'none';
+      setGrowthNote(`兩期都查不到 ID ${uid}。請確認 ID 是否正確，`
+        + '或這位玩家當期沒有出刀 / 不在日服榜上。', 'error');
+      return;
+    }
+    if (!a || !b) {
+      if (res) res.style.display = 'none';
+      setGrowthNote(`只在 ${a ? C.prev : C.cur} 找到這個 ID，另一期沒有紀錄，無法比較成長。`, 'error');
+      return;
+    }
+    if (a.avg_pct === null || b.avg_pct === null) {
+      if (res) res.style.display = 'none';
+      setGrowthNote('這位玩家有一期的戰力段樣本不足，算不出可比的百分位。', 'error');
+      return;
+    }
+
+    setGrowthNote(`已找到：${b.name}（${b.union}）`, 'info');
+    if (res) res.style.display = 'block';
+
+    const dPct = +(b.avg_pct - a.avg_pct).toFixed(1);
+    const dLv = b.lv - a.lv;
+    const dBand = (b.band - a.band) / 20;
+
+    const q = C.dist.pct_delta;
+    let rankTxt, rankSub;
+    if (dPct >= q.p95) { rankTxt = '前 5%'; rankSub = '成長幅度在所有玩家的最前段'; }
+    else if (dPct >= q.p75) { rankTxt = '前 25%'; rankSub = '成長明顯快過多數人'; }
+    else if (dPct >= q.p50) { rankTxt = '前 50%'; rankSub = '略高於中位'; }
+    else if (dPct >= q.p25) { rankTxt = '後 50%'; rankSub = '略低於中位'; }
+    else if (dPct >= q.p05) { rankTxt = '後 25%'; rankSub = '成長慢於多數人'; }
+    else { rankTxt = '後 5%'; rankSub = '相對名次下滑較多'; }
+
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const setC = (id, v, col) => {
+      const e = document.getElementById(id);
+      if (e) { e.textContent = v; e.style.color = col; }
+    };
+    setC('growthPctDelta', `${dPct >= 0 ? '+' : ''}${dPct} pt`,
+      dPct > 0 ? 'var(--accent-green)' : (dPct < 0 ? 'var(--accent-red)' : 'var(--text-primary)'));
+    set('growthPctSub', `${a.avg_pct}% → ${b.avg_pct}%（全體中位 ${q.p50 >= 0 ? '+' : ''}${q.p50} pt）`);
+
+    setC('growthLvGain', `${dLv >= 0 ? '+' : ''}${dLv} 級`, 'var(--accent-blue)');
+    set('growthLvSub', `Lv ${a.lv} → ${b.lv}`
+      + (dBand ? `，跨了 ${dBand} 個戰力段` : '，仍在同一戰力段')
+      + `（全體中位 +${C.dist.lv_gain.p50} 級）`);
+
+    setC('growthRank', rankTxt, 'var(--accent-amber)');
+    set('growthRankSub', rankSub);
+
+    const teamName = i => (window.UR_TEAMS && window.UR_TEAMS[i]) || '-';
+    const body = document.getElementById('growthDetailBody');
+    if (body) {
+      body.innerHTML = [[C.prev, a], [C.cur, b]].map(([ur, p]) => `
+        <tr>
+          <td><strong>${ur}</strong></td>
+          <td class="align-right tnum">${p.lv}</td>
+          <td class="align-right tnum">${p.band}–${p.band + 19}</td>
+          <td class="align-right tnum">${p.avg_pct}%</td>
+          <td style="font-size:11px;line-height:1.6;">
+            ${p.hits.map(h => `${h.e} ${formatDmg(h.d, true)}`
+              + (h.p === null ? '（樣本不足）' : `（${h.p}%）`)
+              + `<br><span style="color:var(--text-muted)">${teamName(h.t)}</span>`).join('<br>')}
+          </td>
+        </tr>`).join('');
     }
   }
 
@@ -1305,6 +1478,8 @@
 
         document.getElementById('viewMulti').style.display = (tab === 'multi') ? 'block' : 'none';
         document.getElementById('viewSingle').style.display = (tab === 'single') ? 'block' : 'none';
+        const gv = document.getElementById('viewGrowth');
+        if (gv) gv.style.display = (tab === 'growth') ? 'block' : 'none';
         document.getElementById('viewDocs').style.display = (tab === 'docs') ? 'block' : 'none';
 
         if (tab === 'docs') {
@@ -1513,9 +1688,55 @@
     });
   }
 
+  /** 建立期數選單。只有一期時仍顯示，讓使用者知道目前在看哪一期。 */
+  function setupPeriodPicker() {
+    const sel = document.getElementById('periodSelect');
+    const list = periodList();
+    if (!sel || !list.length) return;
+
+    sel.innerHTML = list.map((p, i) =>
+      `<option value="${p}">${p}${i === 0 ? '（最新）' : ''}</option>`).join('');
+    sel.value = state.period;
+
+    sel.addEventListener('change', e => {
+      if (!usePeriod(e.target.value)) return;
+      // 期數換了，隊伍清單與預設隊伍也要跟著換
+      state.selectedTeamKeys = {};
+      initDefaultTeams();
+      const sl = document.getElementById('globalLevelSlider');
+      const si = document.getElementById('globalLevelInput');
+      if (sl) { sl.min = BAND_LO; sl.max = BAND_HI; sl.value = state.syncLv; }
+      if (si) { si.min = BAND_LO; si.max = BAND_HI; si.value = state.syncLv; }
+      renderActiveView();
+      showToast(`已切換到 ${state.period}`);
+    });
+  }
+
+  function setupGrowth() {
+    const inp = document.getElementById('growthPlayerId');
+    const btn = document.getElementById('btnGrowthLookup');
+    const go = () => { state.growthId = inp ? inp.value : ''; renderGrowth(); };
+    if (btn) btn.addEventListener('click', go);
+    if (inp) {
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      inp.addEventListener('change', go);
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    // 先決定期數，再做任何依賴資料的初始化
+    const list = periodList();
+    if (list.length) usePeriod(state.period && window.UR_DATA[state.period] ? state.period : list[0]);
+
+    const sl = document.getElementById('globalLevelSlider');
+    const si = document.getElementById('globalLevelInput');
+    if (sl) { sl.min = BAND_LO; sl.max = BAND_HI; }
+    if (si) { si.min = BAND_LO; si.max = BAND_HI; }
+
+    setupPeriodPicker();
     initDefaultTeams();
     setupEventListeners();
+    setupGrowth();
     renderActiveView();
   });
 
