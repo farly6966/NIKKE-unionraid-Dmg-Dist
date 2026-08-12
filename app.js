@@ -24,12 +24,15 @@
   //  等級範圍、屬性清單、傷害合理區間都跟著該期的 consts 走 —— 玩家等級
   //  逐期上升，寫死會在下一期失準。
   // ──────────────────────────────────────────────────────────────
+  // BAND_LO/HI = 樣本充足的「推薦範圍」（滑桿預設落點）
+  // DATA_LO/HI = 有任何資料的完整範圍（可查詢的極限）
   let BAND_LO = 661, BAND_HI = 1000, BANDS = [];
+  let DATA_LO = 661, DATA_HI = 1000;
   let PLAUSIBLE_MIN = 1e9, PLAUSIBLE_MAX = 5e11, OBSERVED_MAX_B = 221;
 
   function rebuildBands() {
     BANDS = [];
-    for (let b = BAND_LO; b <= BAND_HI; b += 20) BANDS.push(b);
+    for (let b = DATA_LO; b <= DATA_HI; b += 20) BANDS.push(b);
   }
 
   function periodList() {
@@ -55,13 +58,15 @@
     const c = D.consts || {};
     if (c.BAND_LO) BAND_LO = c.BAND_LO;
     if (c.BAND_HI) BAND_HI = c.BAND_HI;
+    DATA_LO = c.DATA_LO || BAND_LO;
+    DATA_HI = c.DATA_HI || BAND_HI;
     if (c.PLAUSIBLE_MIN) PLAUSIBLE_MIN = c.PLAUSIBLE_MIN;
     if (c.PLAUSIBLE_MAX) PLAUSIBLE_MAX = c.PLAUSIBLE_MAX;
     if (c.OBSERVED_MAX_B) OBSERVED_MAX_B = c.OBSERVED_MAX_B;
     rebuildBands();
     state.period = ur;
     // 等級可能落在新期範圍外，夾回來
-    state.syncLv = Math.max(BAND_LO, Math.min(BAND_HI, state.syncLv));
+    state.syncLv = Math.max(DATA_LO, Math.min(DATA_HI, state.syncLv));
     return true;
   }
 
@@ -116,8 +121,61 @@
   }
 
   // Helper: Check if level is within covered range (661 ~ 1000)
+  /**
+   * 傷害輸入的提示訊息。沒問題時回傳 null。
+   *
+   * ⚠ 只檢查「解析失敗」是不夠的 —— 40M、40萬 都能解析成功，
+   *   只是數值遠低於 UR 的合理範圍。原始的災難性 bug 就是這種
+   *   「解析成功但數值荒謬」被靜默採用，五個屬性同時歸零。
+   */
+  function damageInputNote(raw, parsed) {
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    if (!parsed) return '看不懂這個輸入。可用格式：40B、400億、40,000,000,000、3.6e10';
+    if (parsed < PLAUSIBLE_MIN) {
+      const lead = parseFloat(s.replace(/[,\s_]/g, ''));
+      const guess = (!isNaN(lead) && lead > 0 && lead * 1e9 <= PLAUSIBLE_MAX)
+        ? `是不是要輸入 ${formatDmg(lead * 1e9, true)}？` : '請確認單位。';
+      return `解析為 ${Number(parsed).toLocaleString()} 傷害，遠低於 UR 的合理範圍。${guess}`;
+    }
+    if (parsed > PLAUSIBLE_MAX) {
+      return `解析為 ${formatDmg(parsed, true)}，超出本期觀測上限（約 ${OBSERVED_MAX_B} B），請確認單位。`;
+    }
+    return null;
+  }
+
+  // 「有沒有資料」與「樣本夠不夠」是兩件事。
+  //
+  //   有資料 + 樣本足夠(tier 1~3) → 正常顯示
+  //   有資料 + 樣本很少(tier 4)   → 照樣顯示數字，但標明樣本數與可信度
+  //   完全沒有資料                → 才拒答
+  //
+  // 舊版把整個 BAND_HI 以上一律拒答，等於把高等玩家真實存在的資料丟掉
+  // （例如 Iron 在 1041–1060 段有 55 筆，完全可用）。
   function isLevelInRange(lv) {
-    return lv >= BAND_LO && lv <= BAND_HI;
+    return lv >= DATA_LO && lv <= DATA_HI;
+  }
+
+  /** 該等級在該屬性是否有任何樣本。 */
+  function hasDataFor(elem, lv, hlabel) {
+    const bm = window.BENCHMARK_V3 || {};
+    return !!bm[`${elem}_${hlabel || 'all'}_${band_of(lv)}`];
+  }
+
+  /** 依 tier 給出顯示用的可信度標籤。 */
+  function tierLabel(rec) {
+    if (!rec) return { level: 'none', text: '此戰力段沒有任何紀錄' };
+    if (rec.tier === 1) return { level: 'ok', text: `基準：${rec.band_start}–${rec.band_end} 段，n=${rec.n}` };
+    if (rec.tier <= 3) {
+      return {
+        level: 'warn',
+        text: `本段樣本不足，已併入 ${rec.merged_from}–${rec.merged_to} 段（跨戰力層，僅供參考），n=${rec.n}`
+      };
+    }
+    return {
+      level: 'low',
+      text: `此戰力段僅 ${rec.n} 筆樣本（低於 30），數字僅供參考，不建議拿來比較`
+    };
   }
 
   // Helper: Normalize team key by sorting 5 unit names alphabetically and joining with '|'
@@ -329,8 +387,8 @@
 
   // Format Equivalent Band string
   function formatEqBand(eqB) {
-    if (eqB === 'BELOW_RANGE') return '< 661 級 (低於下限)';
-    if (eqB === 'ABOVE_RANGE') return '> 1000 級 (頂尖超群)';
+    if (eqB === 'BELOW_RANGE') return '低於可比範圍';
+    if (eqB === 'ABOVE_RANGE') return '高於可比範圍';
     if (typeof eqB === 'number') return `${eqB}–${eqB + 19} 段`;
     return eqB || '-';
   }
@@ -905,14 +963,15 @@
       if (teamTierBanner && teamTierText) {
         teamTierBanner.className = 'tier-banner tier-banner-3';
         teamTierBanner.style.display = 'flex';
-        teamTierText.innerHTML = '等級超出資料涵蓋範圍（661–1000），無法比較';
+        teamTierText.innerHTML = `等級超出資料涵蓋範圍（${DATA_LO}–${DATA_HI}），無法比較`;
       }
       document.getElementById('valPercentile').textContent = '-';
       document.getElementById('subtextPercentile').textContent = '超出資料庫涵蓋範圍';
       document.getElementById('valEqLevel').textContent = '-';
       document.getElementById('subtextEqLevel').textContent = '-';
       document.getElementById('valMedian').textContent = '-';
-      document.getElementById('badgeSampleInfo').textContent = '無法比較 (需介於 Lv 661 ~ 1000)';
+      document.getElementById('badgeSampleInfo').textContent =
+        `無法比較 (需介於 Lv ${DATA_LO} ~ ${DATA_HI})`;
       return;
     }
 
@@ -1025,7 +1084,10 @@
           if (teamTierBanner && teamTierText) {
             teamTierBanner.className = 'tier-banner tier-banner-3';
             teamTierBanner.style.display = 'flex';
-            teamTierText.innerHTML = '此戰力段樣本不足';
+            teamTierText.innerHTML = gRow
+              ? `此戰力段只有 <strong>${gRow.n}</strong> 筆樣本（低於 30 的門檻）。`
+                + '百分位仍會算出來，但抽樣誤差很大，不建議拿來跟人比較。'
+              : '此戰力段沒有任何紀錄。';
           }
         }
 
@@ -1065,10 +1127,12 @@
     if (valMedian) valMedian.innerHTML = formatDmg(p50, true, true);
     if (badgeSampleInfo) {
       const scopeLabel = state.singleScope === 'team' ? '同隊基準' : '全體基準';
-      badgeSampleInfo.innerHTML = `
-        ${scopeLabel}：${userBand}–${userBand + 19} 段 ｜ 樣本數 n = ${pool.length}
-      `;
+      const few = pool.length < 30;
+      badgeSampleInfo.innerHTML =
+        `${scopeLabel}：${userBand}–${userBand + 19} 段 ｜ 樣本數 n = ${pool.length}`
+        + (few ? ' ｜ <strong style="color:var(--accent-red)">樣本過少，僅供參考</strong>' : '');
     }
+
 
     document.getElementById('pill_p10').innerHTML = formatDmg(p10, true, true);
     document.getElementById('pill_p25').innerHTML = formatDmg(p25, true, true);
@@ -1225,13 +1289,13 @@
         bandTag.textContent = `${curBand}–${curBand + 19} 段`;
         bandTag.style.color = 'var(--accent-blue)';
       } else {
-        bandTag.textContent = `超出範圍 (${BAND_LO}–${BAND_HI})`;
+        bandTag.textContent = `超出資料範圍 (${DATA_LO}–${DATA_HI})`;
         bandTag.style.color = 'var(--accent-red)';
       }
     }
 
     const dbTag = document.getElementById('dbRangeTag');
-    if (dbTag) dbTag.textContent = `${state.period || ''} ｜ LV ${BAND_LO} ~ ${BAND_HI}`;
+    if (dbTag) dbTag.textContent = `${state.period || ''} ｜ 樣本充足 LV ${BAND_LO}~${BAND_HI}｜可查 ${DATA_LO}~${DATA_HI}`;
 
     if (state.activeTab === 'multi') {
       renderMultiDiagnostic();
@@ -1497,9 +1561,10 @@
 
     function updateLevel(newLv) {
       let clamped = Math.round(newLv);
-      // Clamp between 660 and 1000 for UI slider/input
-      if (clamped < 660) clamped = 660;
-      if (clamped > 1000) clamped = 1000;
+      // 夾在「有資料」的範圍，而不是「樣本充足」的範圍。
+      // 高等級玩家人本來就少，用 BAND_HI 夾會讓他們永遠查不到自己。
+      if (clamped < DATA_LO) clamped = DATA_LO;
+      if (clamped > DATA_HI) clamped = DATA_HI;
       state.syncLv = clamped;
       if (levelSlider) levelSlider.value = clamped;
       if (levelInput) levelInput.value = clamped;
@@ -1530,12 +1595,9 @@
           const parsed = parseDamage(e.target.value);
           if (preview) preview.innerHTML = formatDmg(parsed, true, true);
           if (note) {
-            if (e.target.value.trim() && !parsed) {
-              note.textContent = '請輸入十億級 (B) 傷害，如 35B 或 350億';
-              note.style.display = 'block';
-            } else {
-              note.style.display = 'none';
-            }
+            const msg = damageInputNote(e.target.value, parsed);
+            note.textContent = msg || '';
+            note.style.display = msg ? 'block' : 'none';
           }
           renderMultiDiagnostic();
         });
@@ -1597,12 +1659,9 @@
         const parsed = parseDamage(e.target.value);
         if (singlePrev) singlePrev.innerHTML = formatDmg(parsed, true, true);
         if (singleNote) {
-          if (e.target.value.trim() && !parsed) {
-            singleNote.textContent = '請輸入十億級 (B) 傷害，如 36B 或 360億';
-            singleNote.style.display = 'block';
-          } else {
-            singleNote.style.display = 'none';
-          }
+          const msg = damageInputNote(e.target.value, parsed);
+          singleNote.textContent = msg || '';
+          singleNote.style.display = msg ? 'block' : 'none';
         }
         renderSingleDiagnostic();
       });
@@ -1705,8 +1764,8 @@
       initDefaultTeams();
       const sl = document.getElementById('globalLevelSlider');
       const si = document.getElementById('globalLevelInput');
-      if (sl) { sl.min = BAND_LO; sl.max = BAND_HI; sl.value = state.syncLv; }
-      if (si) { si.min = BAND_LO; si.max = BAND_HI; si.value = state.syncLv; }
+      if (sl) { sl.min = DATA_LO; sl.max = DATA_HI; sl.value = state.syncLv; }
+      if (si) { si.min = DATA_LO; si.max = DATA_HI; si.value = state.syncLv; }
       renderActiveView();
       showToast(`已切換到 ${state.period}`);
     });
@@ -1730,8 +1789,8 @@
 
     const sl = document.getElementById('globalLevelSlider');
     const si = document.getElementById('globalLevelInput');
-    if (sl) { sl.min = BAND_LO; sl.max = BAND_HI; }
-    if (si) { si.min = BAND_LO; si.max = BAND_HI; }
+    if (sl) { sl.min = DATA_LO; sl.max = DATA_HI; }
+    if (si) { si.min = DATA_LO; si.max = DATA_HI; }
 
     setupPeriodPicker();
     initDefaultTeams();
