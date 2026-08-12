@@ -213,6 +213,297 @@ body {
   font-weight: 600;
 }
 
+/* Scope Toggle (Global vs Team) */
+.scope-toggle-tabs {
+  display: flex;
+  background: var(--bg-segmented);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  gap: 2px;
+}
+
+.scope-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.scope-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.scope-tab-btn.active {
+  background: #ffffff;
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.02);
+  font-weight: 600;
+}
+
+/* Team Selection Cards */
+.team-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 12px;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f5f5f7;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.team-card:hover {
+  background: #ebebef;
+}
+
+.team-card.active {
+  background: var(--accent-blue-light);
+  border-color: var(--accent-blue);
+}
+
+.team-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.team-card-rank {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.team-card.active .team-card-rank {
+  color: var(--accent-blue);
+}
+
+.team-card-median {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.team-card-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.unit-chip {
+  font-size: 11px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.unit-chip.flex-chip {
+  border-color: #ffd600;
+  background: #fffdf0;
+  font-weight: 600;
+}
+
+.team-card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Custom Roster Selector Accordion */
+.custom-roster-accordion {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.btn-roster-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.custom-roster-panel {
+  margin-top: 8px;
+  background: #fbfbfd;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.roster-meta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.roster-count-tag {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e5e5ea;
+  color: var(--text-primary);
+}
+
+.roster-count-tag.valid {
+  background: var(--accent-green-light);
+  color: var(--accent-green);
+}
+
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.roster-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-primary);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.1s;
+}
+
+.roster-checkbox-label:hover {
+  background: #f5f5f7;
+}
+
+.roster-checkbox-label.selected {
+  background: var(--accent-blue-light);
+  border-color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.custom-roster-status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
+  font-family: var(--font-mono);
+}
+
+/* Tier Banners */
+.tier-banner {
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.tier-banner-1 {
+  background: var(--accent-green-light);
+  border: 1px solid #c6e7c9;
+  color: var(--accent-green);
+}
+
+.tier-banner-2 {
+  background: var(--accent-amber-light);
+  border: 1px solid #fde68a;
+  color: var(--accent-amber);
+}
+
+.tier-banner-3 {
+  background: #f5f5f7;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* Team Switch Recommendation Table */
+.team-switch-box {
+  margin-top: 20px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.team-switch-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.team-switch-table th {
+  padding: 8px 10px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.team-switch-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.team-switch-table tr.current-row td {
+  background: var(--accent-blue-light);
+  font-weight: 600;
+}
+
+.badge-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.badge-tag.current {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+
 /* Common Card */
 .card {
   background: var(--bg-card);
@@ -815,3 +1106,334 @@ body {
   color: var(--text-primary);
   font-weight: 600;
 }
+
+.band-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 3px 10px;
+  background: rgba(0, 113, 227, 0.08);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  border: 1px solid rgba(0, 113, 227, 0.16);
+}
+
+.dmg-note {
+  font-size: 12px;
+  color: var(--accent-red);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   v3 佈局層
+
+   背景：index.html 在 v3 改版時換了一整套 class 名稱，但 style.css
+   沒有同步，導致 27 個 class（含最外層 .app-container 與兩欄骨架
+   .grid-2col）完全沒有樣式，版面因此散開。本層補齊這些定義，
+   並一律以行動優先的方式撰寫。
+   ═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+canvas, img, svg { max-width: 100%; }
+
+/* ── 頁面骨架 ──────────────────────────────────────────── */
+.app-container {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 20px 72px;
+}
+
+.header-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.header-brand .logo-text h1 { overflow-wrap: anywhere; }
+
+.tab-view { display: block; }
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── 表單控制項 ────────────────────────────────────────── */
+.input-unit-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-control {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-mono, inherit);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input-control:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-blue-light);
+}
+select.input-control { font-weight: 500; cursor: pointer; }
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  line-height: 1.45;
+}
+.checkbox-label input { margin-top: 2px; flex: 0 0 auto; }
+
+.btn-primary {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.btn-primary:hover { background: var(--accent-blue-hover); }
+
+/* ── 屬性切換 ─────────────────────────────────────────── */
+.elem-switcher {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.elem-switcher .elem-btn {
+  width: 100%;
+  border: 1px solid transparent;
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  padding: 9px 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.elem-switcher .elem-btn.active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,.08));
+}
+
+/* ── 比較範圍分段控制 ──────────────────────────────────── */
+.scope-toggle-wrap {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-segmented);
+  padding: 3px;
+  border-radius: var(--radius-pill, 999px);
+  margin-bottom: 18px;
+}
+.scope-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.16,1,.3,1);
+}
+.scope-btn.active {
+  background: #fff;
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+/* ── 三大指標卡 ───────────────────────────────────────── */
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  min-width: 0;
+}
+.stat-card-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.stat-card-val {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-mono, inherit);
+  letter-spacing: -.5px;
+  overflow-wrap: anywhere;
+}
+.stat-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.45; overflow-wrap: anywhere; }
+
+/* ── 圖表 ─────────────────────────────────────────────── */
+.chart-section { width: 100%; }
+.chart-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.chart-canvas-wrap { position: relative; width: 100%; }
+.chart-canvas-wrap canvas,
+#distCanvas { display: block; width: 100%; height: auto; }
+.radar-container { display: flex; justify-content: center; width: 100%; overflow: hidden; }
+#radarCanvas { display: block; max-width: 100%; height: auto; }
+
+/* ── 提示與橫幅 ───────────────────────────────────────── */
+.alert-banner {
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.alert-banner h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.alert-banner.warning { background: var(--accent-amber-light); border: 1px solid #fde68a; color: var(--accent-amber); }
+
+.tier-banner { display: flex; align-items: flex-start; gap: 8px; }
+.tier-banner-icon { flex: 0 0 auto; line-height: 1.5; }
+.tier-banner-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
+
+.badge-info {
+  font-size: 11px;
+  font-family: var(--font-mono, inherit);
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill, 999px);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.dmg-note { overflow-wrap: anywhere; }
+
+/* ── 折疊面板（自己勾角色）─────────────────────────────── */
+.accordion-toggle-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+.accordion-panel {
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 12px;
+}
+.roster-panel-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.doc-list { padding-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+.doc-list li { overflow-wrap: anywhere; }
+
+/* ── 表格：一律可橫向捲動，不壓縮欄位 ──────────────────── */
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.report-table, .team-switch-table, .test-suite-table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+/* 長字串防溢出 */
+.team-card, .verdict-banner, .q-pill-val { overflow-wrap: anywhere; }
+
+/* ══════════ 平板 ══════════ */
+@media (max-width: 900px) {
+  .app-container { padding: 24px 16px 56px; }
+  .grid-2col { grid-template-columns: minmax(0, 1fr); }
+  .stat-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ══════════ 手機 ══════════ */
+@media (max-width: 640px) {
+  .app-container { padding: 18px 12px 44px; }
+
+  .app-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .header-meta { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .logo-text h1 { font-size: 17px; line-height: 1.3; }
+  .logo-text p { font-size: 12px; }
+
+  .level-bar-card { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; }
+  .level-label { min-width: 0; display: flex; justify-content: space-between; align-items: center; }
+  .level-slider-wrap { min-width: 0; width: 100%; }
+  .level-input-box { justify-content: space-between; }
+  .input-num { width: auto; flex: 1 1 auto; max-width: 140px; text-align: center; }
+
+  .nav-tabs { flex-wrap: wrap; gap: 4px; }
+  .tab-btn { flex: 1 1 auto; justify-content: center; padding: 8px 12px; font-size: 12px; }
+
+  .card { padding: 16px; }
+  .card-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
+  .badge-info { white-space: normal; }
+
+  .elem-switcher { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .elem-switcher .elem-btn { padding: 11px 6px; }
+
+  .scope-toggle-wrap { flex-direction: column; border-radius: var(--radius-md); }
+  .scope-btn { border-radius: var(--radius-sm); padding: 10px; }
+
+  .stat-cards-grid { grid-template-columns: minmax(0, 1fr); }
+  .stat-card-val { font-size: 22px; }
+
+  .quantiles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .team-cards-list { max-height: 46vh; }
+  .roster-grid { grid-template-columns: minmax(0, 1fr); max-height: 42vh; }
+}
+
+/* ══════════ 小螢幕 ══════════ */
+@media (max-width: 380px) {
+  .app-container { padding: 14px 10px 36px; }
+  .elem-switcher { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-table, .team-switch-table, .test-suite-table { min-width: 440px; }
+}
+
+.input-preview {
+  flex: 0 0 auto;
+  font-family: var(--font-mono, inherit);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  min-width: 62px;
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 640px) { .input-preview { min-width: 54px; font-size: 11px; } }
+
+/* 舊規則殘留修正：這兩個 class 仍被 v3 的 HTML 使用，但舊定義帶固定寬度 */
+.elem-badge { display: inline-block; width: auto; }
+.level-slider-wrap { min-width: 0; }
