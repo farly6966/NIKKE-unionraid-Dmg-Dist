@@ -1437,3 +1437,15 @@ select.input-control { font-weight: 500; cursor: pointer; }
 /* 舊規則殘留修正：這兩個 class 仍被 v3 的 HTML 使用，但舊定義帶固定寬度 */
 .elem-badge { display: inline-block; width: auto; }
 .level-slider-wrap { min-width: 0; }
+
+/* 期數選單 */
+.period-picker { display: flex; align-items: center; gap: 8px; }
+.period-label { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.period-select {
+  width: auto; min-width: 130px; flex: 0 0 auto;
+  padding: 6px 10px; font-size: 12px; font-weight: 600;
+}
+@media (max-width: 640px) {
+  .period-picker { width: 100%; }
+  .period-select { flex: 1 1 auto; min-width: 0; }
+}
